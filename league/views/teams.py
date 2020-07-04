@@ -3,7 +3,7 @@ from rest_framework.exceptions import ParseError
 from rest_framework.generics import get_object_or_404, ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from league.serializers.teams import TeamSerializer,TeamPlayersSerializer
+from league.serializers import TeamSerializer,TeamPlayersSerializer
 from league.models import Team
 # Create your views here.
 

@@ -13,19 +13,19 @@ class User(AbstractUser):
 
 class Player(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    height = models.FloatField()
-    weight = models.FloatField()
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='players')
+    height = models.FloatField(null=True)
+    weight = models.FloatField(null=True)
     birth_date = models.DateField(null=True, blank=True)
     games = models.ManyToManyField('Game', through='GamePlayer', related_name='players')
 
 class Coach(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='coach')
 
 class Game(models.Model):
-    team1 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team1')
-    team2 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='team2')
+    team1 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='game_team1')
+    team2 = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='game_team2')
     team1_score = models.IntegerField()
     team2_score = models.IntegerField()
     date = models.DateField(null=True, blank=True)

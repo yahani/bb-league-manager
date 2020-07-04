@@ -3,7 +3,7 @@ from rest_framework.exceptions import ParseError
 from rest_framework.generics import get_object_or_404, ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from league.serializers.users import CoachTeamSerializer,UserSerializer,CoachSerializer,PlayerTeamSerializer,PlayerSerializer
+from league.serializers import CoachTeamSerializer,UserSerializer,CoachSerializer,PlayerTeamSerializer,PlayerSerializer
 from league.models import User,Coach,Team,Player
 # Create your views here.
 
@@ -11,24 +11,19 @@ class CoachEndPoint(APIView):
     def put(self, request):
         if 'username' not in request.data or 'password' not in request.data or 'email' not in request.data or 'team_id' not in request.data:
             raise ParseError("Empty content")
-        
-        team_id = request.data.pop('team_id')
 
-        userSerializer = UserSerializer(data=request.data)
-        if userSerializer.is_valid():
-            userSerializer.save()
-            user = get_object_or_404(User.objects.all(), pk=userSerializer.data['id'])
-            team = get_object_or_404(Team.objects.all(), pk=team_id)
-            coach = Coach.objects.create(user=user,team=team)
-            return Response(userSerializer.data, status=status.HTTP_200_OK)
+        coachSerializer = CoachSerializer(data=request.data)
+        if coachSerializer.is_valid():
+            coachSerializer.save()
+            return Response(coachSerializer.data, status=status.HTTP_200_OK)
         else:
-            return Response(userSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(coachSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, user_id):
-        db_user = get_object_or_404(User.objects.all(), pk=user_id)
+        db_user = get_object_or_404(Coach.objects.all(), pk=user_id)
 
         data = request.data
-        serializer = UserSerializer(instance=db_user, data=data, partial=True)
+        serializer = CoachSerializer(instance=db_user, data=data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
@@ -54,21 +49,13 @@ class PlayerEndPoint(APIView):
     def put(self, request):
         if 'username' not in request.data or 'password' not in request.data or 'email' not in request.data or 'team_id' not in request.data:
             raise ParseError("Empty content")
-        
-        team_id = request.data.pop('team_id')
-        height=request.data.pop('height')
-        weight =request.data.pop('weight')
-        birth_date =request.data.pop('birth_date')
 
-        userSerializer = UserSerializer(data=request.data)
-        if userSerializer.is_valid():
-            userSerializer.save()
-            user = get_object_or_404(User.objects.all(), pk=userSerializer.data['id'])
-            team = get_object_or_404(Team.objects.all(), pk=team_id)
-            coach = Player.objects.create(user=user,team=team, height=height,weight=weight,birth_date=birth_date)
-            return Response(userSerializer.data, status=status.HTTP_200_OK)
+        playerSerializer = PlayerSerializer(data=request.data)
+        if playerSerializer.is_valid():
+            playerSerializer.save()
+            return Response(playerSerializer.data, status=status.HTTP_200_OK)
         else:
-            return Response(userSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(playerSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, user_id):
         db_user = get_object_or_404(Player.objects.all(), pk=user_id)

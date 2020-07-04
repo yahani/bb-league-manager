@@ -3,8 +3,8 @@ from rest_framework.exceptions import ParseError
 from rest_framework.generics import get_object_or_404, ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from league.serializers.games import GameSerializer
-from league.models import Team,Game
+from league.serializers import GameSerializer,GamePlayerSerializer
+from league.models import Team,Game,Player, GamePlayer
 
 
 class GameEndPoint(APIView):
@@ -49,3 +49,44 @@ class GameEndPoint(APIView):
         db_game = get_object_or_404(Game.objects.all(), pk=game_id)
         db_game.delete()
         return Response({"message": "Game ID `{}` has been deleted.".format(game_id)}, status=status.HTTP_200_OK)
+
+class GamePlayerEndPoint(APIView):
+    def put(self, request):
+        if 'game' not in request.data or 'player' not in request.data or 'score' not in request.data:
+            raise ParseError("Empty content")
+        
+        game_id = request.data.pop('game')
+        game = get_object_or_404(Game.objects.all(), pk=game_id)
+        player_id= request.data.pop('player')
+        player = get_object_or_404(Player.objects.all(), pk=player_id)
+        score =request.data.pop('score')
+
+        game_player = GamePlayer.objects.create(game=game, player=player, score=score)
+
+        gamePlayerSerializer = GamePlayerSerializer(game_player, many=False)
+        return Response(gamePlayerSerializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, record_id):
+        db_gameplayer = get_object_or_404(GamePlayer.objects.all(), pk=record_id)
+
+        data = request.data
+        serializer = GamePlayerSerializer(instance=db_gameplayer, data=data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def get(self, request, record_id):
+        db_gameplayer = get_object_or_404(GamePlayer.objects.all(), pk=record_id)
+
+        serializer = GamePlayerSerializer(db_gameplayer, many=False)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, record_id):
+        db_gameplayer = get_object_or_404(GamePlayer.objects.all(), pk=record_id)
+        db_gameplayer.delete()
+        return Response({"message": "Record ID `{}` has been deleted.".format(record_id)}, status=status.HTTP_200_OK)
