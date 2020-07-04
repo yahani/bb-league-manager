@@ -1,0 +1,6 @@
+db.sqlite3
+bbleague/__pycache__/
+league/__pycache__/
+league/migrations/__pycache__/
+league/serializers/__pycache__/
+league/views/__pycache__/
