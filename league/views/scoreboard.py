@@ -80,7 +80,11 @@ class TeamPlayersEndPoint(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
-
+    def post(self, request):
+        coach = Coach.objects.filter(user=request.user)[0]
+        serializer = TeamPlayersSerializer(coach.team, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class TeamAverageEndPoint(APIView):
     permission_classes = (IsAuthenticated, IsCoachOrAdmin,)
     def get(self, request, team_id):

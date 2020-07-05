@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'^scoreboard/$', GamesViewSet.as_view({'post': 'list'}),name='scoreboard'),
     url(r'^team-average/(?P<team_id>[0-9]+)', TeamAverageEndPoint.as_view(),name='team-average'),
     url(r'^team-players/(?P<team_id>[0-9]+)', TeamPlayersEndPoint.as_view(),name='team-players'),
+    url(r'^team-players/$', TeamPlayersEndPoint.as_view(),name='my-team'),
     url(r'^player-average/(?P<player_id>[0-9]+)', PlayerAverageEndPoint.as_view(),name='player-average'),
     url(r'^team-percentile/(?P<team_id>[0-9]+)', PlayerPercentileEndPoint.as_view(),name='team-percentile'),
     
