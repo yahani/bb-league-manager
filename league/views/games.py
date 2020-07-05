@@ -5,9 +5,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from league.serializers import GameSerializer,GamePlayerSerializer
 from league.models import Team,Game,Player, GamePlayer
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 
 
 class GameEndPoint(APIView):
+    permission_classes = (IsAdminUser,IsAuthenticated,)
+
     def put(self, request):
         if 'team1' not in request.data or 'team2' not in request.data or 'team1_score' not in request.data or 'team2_score' not in request.data or 'date' not in request.data:
             raise ParseError("Empty content")
@@ -51,6 +54,8 @@ class GameEndPoint(APIView):
         return Response({"message": "Game ID `{}` has been deleted.".format(game_id)}, status=status.HTTP_200_OK)
 
 class GamePlayerEndPoint(APIView):
+    permission_classes = (IsAdminUser,IsAuthenticated,)
+
     def put(self, request):
         if 'game' not in request.data or 'player' not in request.data or 'score' not in request.data:
             raise ParseError("Empty content")

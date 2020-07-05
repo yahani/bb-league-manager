@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from league.models import User, Coach, Player,Team, GamePlayer, Game
+from league.models import User, Coach, Player,Team, GamePlayer, Game,LoginEntry
 from rest_framework.generics import get_object_or_404
 
 class UserSerializer(serializers.ModelSerializer):
@@ -211,4 +211,14 @@ class PlayerGamesSerializer(serializers.ModelSerializer):
             'weight',
             'birth_date',
             'games'
+        )
+
+class LoginEntrySerializer(serializers.ModelSerializer):
+    user = UserSerializer(many=False, read_only=True)
+    class Meta:
+        model = LoginEntry
+        fields = (
+            'user',
+            'login_time',
+            'logout_time'
         )

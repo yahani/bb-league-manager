@@ -5,9 +5,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from league.serializers import CoachTeamSerializer,UserSerializer,CoachSerializer,PlayerTeamSerializer,PlayerSerializer
 from league.models import User,Coach,Team,Player
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 # Create your views here.
 
 class CoachEndPoint(APIView):
+    permission_classes = (IsAdminUser,IsAuthenticated,)
+
     def put(self, request):
         if 'username' not in request.data or 'password' not in request.data or 'email' not in request.data or 'team_id' not in request.data:
             raise ParseError("Empty content")
@@ -46,6 +49,8 @@ class CoachEndPoint(APIView):
 
 
 class PlayerEndPoint(APIView):
+    permission_classes = (IsAdminUser,IsAuthenticated,)
+
     def put(self, request):
         if 'username' not in request.data or 'password' not in request.data or 'email' not in request.data or 'team_id' not in request.data:
             raise ParseError("Empty content")

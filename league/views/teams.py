@@ -5,9 +5,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from league.serializers import TeamSerializer,TeamPlayersSerializer
 from league.models import Team
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
 # Create your views here.
 
 class TeamEndPoint(APIView):
+    permission_classes = (IsAdminUser,IsAuthenticated,)
+
     def put(self, request):
         if 'name' not in request.data:
             raise ParseError("Empty content")
@@ -36,7 +39,7 @@ class TeamEndPoint(APIView):
     def get(self, request, team_id):
         db_team = get_object_or_404(Team.objects.all(), pk=team_id)
 
-        serializer = TeamPlayersSerializer(db_team, many=False)
+        serializer = TeamSerializer(db_team, many=False)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -34,3 +34,9 @@ class GamePlayer(models.Model):
     game = models.ForeignKey(Game, on_delete=models.SET_NULL, related_name='game_players', null=True)
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, related_name='game_players', null=True)
     score = models.IntegerField()
+
+class LoginEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='user_login', null=True)
+    login_time = models.DateTimeField(auto_now_add=True, blank=True)
+    logout_time = models.DateTimeField(null=True, blank=True)
+    session_time = models.FloatField(null=True, blank=True)
