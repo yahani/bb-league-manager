@@ -77,9 +77,9 @@ for player:
     "token":"<token>"
 }
 
-For all subsequent requests, add following header
+#### For all subsequent requests, add following header
 
-Authorization : Bearer <token>
+Authorization : Bearer {token}
 
 #### Scoreboard
 
@@ -94,26 +94,32 @@ Body:
 
 #### Team Players
 
-Request: GET /team-players/<id>
+Request: GET /team-players/id
 
 Request: POST /team-players/
 
 #### Team Average
 
-Request: GET /team-average/<id>
+Request: GET /team-average/id
 
 #### Player details including average and number of games
 
-Request: GET /player-average/<id>
+Request: GET /player-average/id
 
 #### Team percentile
 
-Request POST /team-percentile/<id>
+Request POST /team-percentile/id
 
-Body: { "percentile" : 0.7} => default 0.9
+Body: 
+
+{ 
+
+"percentile" : 0.7  //default 0.9
+
+} 
 
 #### Admin site stats
 
-Request: GET /site-stats/<id>
+Request: GET /site-stats/id
 
 Request: POST /site-stats/
