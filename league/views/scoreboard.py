@@ -74,51 +74,64 @@ class TeamPlayersEndPoint(APIView):
     permission_classes = (IsAuthenticated, IsCoachOrAdmin,)
     def get(self, request, team_id):
         db_team = get_object_or_404(Team.objects.all(), pk=team_id)
-        coach = Coach.objects.filter(user=request.user)[0]
-        if coach.team == db_team  or request.user.is_staff:
+        if request.user.is_coach:
+            coach = Coach.objects.filter(user=request.user)[0]
+            if coach.team == db_team:
+                serializer = TeamPlayersSerializer(db_team, many=False)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
+        else:
             serializer = TeamPlayersSerializer(db_team, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
+
     def post(self, request):
-        coach = Coach.objects.filter(user=request.user)[0]
-        serializer = TeamPlayersSerializer(coach.team, many=False)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.user.is_coach:
+            coach = Coach.objects.filter(user=request.user)[0]
+            serializer = TeamPlayersSerializer(coach.team, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({'message':'This action is not allowed'}, status=status.HTTP_400_BAD_REQUEST)
+        
     
 class TeamAverageEndPoint(APIView):
     permission_classes = (IsAuthenticated, IsCoachOrAdmin,)
     def get(self, request, team_id):
         db_team = get_object_or_404(Team.objects.all(), pk=team_id)
-        coach = Coach.objects.filter(user=request.user)[0]
-        if coach.team == db_team or request.user.is_staff:
-            avg1 = db_team.game_team1.aggregate(Avg('team1_score'))
-            avg2 = db_team.game_team2.aggregate(Avg('team2_score'))
-            if avg1['team1_score__avg'] is None and avg2['team2_score__avg'] is None:
-                avg = 0
-            if avg1['team1_score__avg'] is None or avg2['team2_score__avg'] is None :
-                avg = avg1['team1_score__avg'] if avg2['team2_score__avg'] is None else avg2['team2_score__avg']
-            else:
-                avg = (avg1['team1_score__avg']+avg2['team2_score__avg'])/2
-
-            return Response(avg, status=status.HTTP_200_OK)
+        avg1 = db_team.game_team1.aggregate(Avg('team1_score'))
+        avg2 = db_team.game_team2.aggregate(Avg('team2_score'))
+        if avg1['team1_score__avg'] is None and avg2['team2_score__avg'] is None:
+            avg = 0
+        if avg1['team1_score__avg'] is None or avg2['team2_score__avg'] is None :
+            avg = avg1['team1_score__avg'] if avg2['team2_score__avg'] is None else avg2['team2_score__avg']
         else:
-            return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
+            avg = (avg1['team1_score__avg']+avg2['team2_score__avg'])/2
+        if request.user.is_coach:
+            coach = Coach.objects.filter(user=request.user)[0]
+            if coach.team == db_team:
+                return Response(avg, status=status.HTTP_200_OK)
+            else:
+                return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response(avg, status=status.HTTP_200_OK)
 
 class PlayerAverageEndPoint(APIView):
-    permission_classes = (IsAuthenticated, IsCoach,)
+    permission_classes = (IsAuthenticated, IsCoachOrAdmin,)
 
     def get(self, request, player_id):
         db_player = get_object_or_404(Player.objects.all(), pk=player_id)
-        coach = Coach.objects.filter(user=request.user)[0]
-        if coach.team.players.filter(pk=player_id).count()>0:
-            records = db_player.game_players.all()
-            avg = records.aggregate(Avg('score'))
-            count = records.count()
-            response = {'name':db_player.user.username, 'height':db_player.height,'weight':db_player.weight,'average':avg['score__avg'],'num_of_games':count}
-
-            return Response(response, status=status.HTTP_200_OK)
+        records = db_player.game_players.all()
+        avg = records.aggregate(Avg('score'))
+        count = records.count()
+        response = {'name':db_player.user.username, 'height':db_player.height,'weight':db_player.weight,'average':avg['score__avg'],'num_of_games':count}
+        if request.user.is_coach:
+            coach = Coach.objects.filter(user=request.user)[0]
+            if coach.team.players.filter(pk=player_id).count()>0:
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({'message':'you dont have permission to view this details'}, status=status.HTTP_403_FORBIDDEN)
+            return Response(response, status=status.HTTP_200_OK)
 
 class PlayerPercentileEndPoint(APIView):
     permission_classes = (IsAuthenticated, IsCoach,)

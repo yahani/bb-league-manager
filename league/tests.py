@@ -85,6 +85,39 @@ class AdminLoginApiTestCase(APITestCase):
         self.assertEqual(User.objects.count(), 1)
         self.assertEqual(User.objects.get().username, 'testadmin')
 
+class CoachLoginApiTestCase(APITestCase):
+    def setUp(self):
+        t=Team.objects.create(name="team")
+        u = User.objects.create_user(username='coach', email='coach@bbleague.com', password='coach')
+        Coach.objects.create(user=u,team=t)
+
+    def test_login(self):
+        data = {'username': 'coach', 'password':'coach'}
+        url = reverse('login')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue('token' in response.data)
+        self.assertEqual(response.data['username'], 'coach')
+
+    def test_login_invalid(self):
+        data = {'username': 'coach', 'password':'coach1'}
+        url = reverse('login')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+class PlayerLoginApiTestCase(APITestCase):
+    def setUp(self):
+        t=Team.objects.create(name="team")
+        u = User.objects.create_user(username='player', email='player@bbleague.com', password='player')
+        Player.objects.create(user=u,team=t,weight=65,height=189)
+
+    def test_login(self):
+        data = {'username': 'player', 'password':'player'}
+        url = reverse('login')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue('token' in response.data)
+        self.assertEqual(response.data['username'], 'player')
 
 class GetAllGamesTest(APITestCase):
     """ Test module for GET all puppies API """
@@ -135,6 +168,7 @@ class TeamPlayersTest(APITestCase):
     """ Test module for GET all puppies API """
 
     def setUp(self):
+        User.objects.create_superuser(username='admin', email='admin@bbleague.com', password='admin')
         t1 = Team.objects.create(name="team1")
         u = User.objects.create_user(username = "coach1",password = "coach1",email = "dd",is_coach=True)
         Coach.objects.create(user=u, team = t1)
@@ -147,7 +181,7 @@ class TeamPlayersTest(APITestCase):
         Player.objects.create(user=u, team = t2, weight=random.randint(55, 80), height=random.randint(165, 200), birth_date = '1990-9-9')
         date = '2020-03-14'
 
-    def test_team_players(self):
+    def test_team_players_coach(self):
         user = User.objects.get(username='coach1')
         self.client.force_authenticate(user=user)
         # get API response
@@ -158,6 +192,39 @@ class TeamPlayersTest(APITestCase):
         serializer = TeamPlayersSerializer(team, many=False)
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_team_players_coach_my_team(self):
+        user = User.objects.get(username='coach1')
+        self.client.force_authenticate(user=user)
+        # get API response
+        self.client.login(username='coach1', password='coach1')
+        response = self.client.post(reverse('my-team') )
+        # get data from db
+        team = Team.objects.get(pk=1)
+        serializer = TeamPlayersSerializer(team, many=False)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_team_players_admin(self):
+        user = User.objects.get(username='admin')
+        self.client.force_authenticate(user=user)
+        # get API response
+        self.client.login(username='admin', password='admin')
+        response = self.client.get(reverse('team-players', kwargs={'team_id': 1}) )
+        # get data from db
+        team = Team.objects.get(pk=1)
+        serializer = TeamPlayersSerializer(team, many=False)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_team_players_admin_my_team_fail(self):
+        user = User.objects.get(username='admin')
+        self.client.force_authenticate(user=user)
+        # get API response
+        self.client.login(username='admin', password='admin')
+        response = self.client.post(reverse('my-team') )
+        # get data from db
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_team_players_coach_auth_fail(self):
         user = User.objects.get(username='coach1')
@@ -181,6 +248,7 @@ class TeamAverageTest(APITestCase):
     """ Test module for GET all puppies API """
 
     def setUp(self):
+        User.objects.create_superuser(username='admin', email='admin@bbleague.com', password='admin')
         t1 = Team.objects.create(name="team1")
         u = User.objects.create_user(username = "coach1",password = "coach1",email = "dd",is_coach=True)
         Coach.objects.create(user=u, team = t1)
@@ -192,11 +260,21 @@ class TeamAverageTest(APITestCase):
         Game.objects.create(team1=t1, team2=t2, team1_score = 4, team2_score=7,date=date)
         Game.objects.create(team1=t2, team2=t1, team1_score = 4, team2_score=3,date=date)
 
-    def test_team_average(self):
+    def test_team_average_coach(self):
         user = User.objects.get(username='coach1')
         self.client.force_authenticate(user=user)
         # get API response
         self.client.login(username='coach1', password='coach1')
+        response = self.client.get(reverse('team-average', kwargs={'team_id': 1}) )
+        self.assertTrue(isinstance(response.data, float))
+        self.assertEqual(response.data, 3.0)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_team_average_admin(self):
+        user = User.objects.get(username='admin')
+        self.client.force_authenticate(user=user)
+        # get API response
+        self.client.login(username='admin', password='admin')
         response = self.client.get(reverse('team-average', kwargs={'team_id': 1}) )
         self.assertTrue(isinstance(response.data, float))
         self.assertEqual(response.data, 3.0)
@@ -237,12 +315,23 @@ class PlayerAverageTest(APITestCase):
         g2= Game.objects.create(team1=t1, team2=t2, team1_score = 4, team2_score=7,date='2020-3-3')
         GamePlayer.objects.create(game=g1, player=p1, score = 2)
         GamePlayer.objects.create(game=g2, player=p1, score = 4)
+        User.objects.create_superuser(username='admin', email='admin@bbleague.com', password='admin')
 
-    def test_player_average(self):
+    def test_player_average_coach(self):
         user = User.objects.get(username='coach1')
         self.client.force_authenticate(user=user)
         # get API response
         self.client.login(username='coach1', password='coach1')
+        response = self.client.get(reverse('player-average', kwargs={'player_id': 2}) )
+        self.assertEqual(response.data['average'], 3)
+        self.assertEqual(response.data['num_of_games'], 2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_player_average_admin(self):
+        user = User.objects.get(username='admin')
+        self.client.force_authenticate(user=user)
+        # get API response
+        self.client.login(username='admin', password='admin')
         response = self.client.get(reverse('player-average', kwargs={'player_id': 2}) )
         self.assertEqual(response.data['average'], 3)
         self.assertEqual(response.data['num_of_games'], 2)
@@ -300,6 +389,8 @@ class PlayerPercentileTest(APITestCase):
         GamePlayer.objects.create(game=g1, player=p4, score = 0)#p1->avg=2
         GamePlayer.objects.create(game=g2, player=p4, score = 4)
 
+        User.objects.create_superuser(username='admin', email='admin@bbleague.com', password='admin')
+
     def test_player_percentile(self):
         user = User.objects.get(username='coach1')
         self.client.force_authenticate(user=user)
@@ -310,6 +401,13 @@ class PlayerPercentileTest(APITestCase):
         serializer = PlayerAvgSerializer((p,), many=True)
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_player_percentile_admin_fail(self):
+        user = User.objects.get(username='admin')
+        self.client.force_authenticate(user=user)
+        self.client.login(username='admin', password='admin')
+        response = self.client.post(reverse('team-percentile', kwargs={'team_id': 1}) )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_player_percentile_player_auth_fail(self):
         user = User.objects.get(username='player1')
