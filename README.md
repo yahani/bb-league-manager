@@ -77,7 +77,7 @@ for player:
     "token":"<token>"
 }
 
-For all subsequent requests, add following header
+#### For all subsequent requests, add following header
 
 Authorization : Bearer {token}
 
